@@ -315,9 +315,9 @@ constructor(input) {
   if(this.current !== this.root){
     throw new Error("Unclosed structure at the end of input");
   }
-  return removeCircular(root);
+  removeCircular(root);
 }
 }
 
-console.log(JSON.stringify(parse(JSON.stringify({ key: "va lue" })), null, 2));
-console.log(parse('1e3'));
+console.log(JSON.stringify(new Parse(JSON.stringify({ key: "va lue" })).root, null, 2));
+console.log(new Parae('1e3'));
