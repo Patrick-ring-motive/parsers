@@ -244,6 +244,9 @@ function parse(input) {
         current = str;
         continue;
       }else if (endsObject(input[i]) && current.type === "object") {
+        if (lastChar == ",") {
+          throw new Error("Trailing comma before closing object at " + i);
+        }
         const parent = current.parent;
         delete current.parent;
         current = parent;
