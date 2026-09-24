@@ -57,6 +57,15 @@ function removeCircular(obj) {
 }
 
 class Parse{
+  startBuildValue(type){
+    this.state = "build-value";
+    const val = { type, value: "", parent: this.current };
+    this.current.children.push(val);
+    this.current = val;
+    if(type !== "string"){
+      this.index--;
+    }
+  }
 constructor(input) {
   this.raw = [...String(input)];
   this.root = { type: "root", children: [] };
@@ -80,31 +89,16 @@ constructor(input) {
     }
     if (this.state === "find-type") {
       if (startsString(this.raw[this.index])) {
-        this.state = "build-value";
-        const str = { type: "string", value: "", parent: this.current };
-        this.current.children.push(str);
-        this.current = str;
+        this.startBuildValue("string");
         continue;
       } else if (startsNumber(this.raw[this.index])) {
-        this.state = "build-value";
-        const num = { type: "number", value: "", parent: this.current };
-        this.current.children.push(num);
-        this.current = num;
-        this.index--;
+        this.startBuildValue("number");
         continue;
       } else if (startsBoolean(this.raw[this.index])) {
-        this.state = "build-value";
-        const bool = { type: "boolean", value: "", parent: this.current };
-        this.current.children.push(bool);
-        this.current = bool;
-        this.index--;
+        this.startBuildValue("boolean");
         continue;
       } else if (startsNull(this.raw[this.index])) {
-        this.state = "build-value";
-        const nil = { type: "null", value: "", parent: this.current };
-        this.current.children.push(nil);
-        this.current = nil;
-        this.index--;
+        this.startBuildValue("null");
         continue;
       } else if (startsArray(this.raw[this.index])) {
         this.state = "find-type";
