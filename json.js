@@ -301,7 +301,7 @@ function parse(input) {
       state = "close";
       continue;
     }
-    if (input[i] === ",") {
+    if (input[i] === ","&&["object","array"].includes(current.type)) {
       if(current.type === "object"){
         state = "find-key";
       }else{
