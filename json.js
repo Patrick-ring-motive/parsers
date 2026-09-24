@@ -243,7 +243,13 @@ function parse(input) {
         current.children.push(str);
         current = str;
         continue;
-      }else{
+      }else if (endsObject(input[i]) && current.type === "object") {
+        const parent = current.parent;
+        delete current.parent;
+        current = parent;
+        state = "close";
+        continue;
+      } else{
         throw new Error("Unquoted object key at " + i);
       }
     }
