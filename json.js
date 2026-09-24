@@ -23,6 +23,7 @@ const endsObject = (x) => x === "}";
 
 const backslash = String.fromCharCode(92);
 const isEscape = (x) => x === backslash;
+const xx = backslash + backslash;
 
 const startsArray = (x) => x === "[";
 const endsArray = (x) => x === "]";
@@ -140,8 +141,7 @@ function parse(input) {
 
     if (state === "build-value") {
       if (current.type === "string") {
-        const xx = backslash + backslash;
-        if (endsString(input[i]) && !(RegExp(`${xx}+$`).exec(current.value)?.[0]?.length % 2) && !isEscape(input[i - 1])) {
+        if (endsString(input[i]) && !(RegExp(`${xx}+$`).exec(current.value)?.[0]?.length % 2)) {
           current = current.parent;
           state = "close";
           continue;
@@ -237,7 +237,7 @@ function parse(input) {
     }
     if (state === "build-key") {
       if (current.type === "string") {
-        if (endsString(input[i]) && !isEscape(input[i - 1])) {
+        if (endsString(input[i]) && !(RegExp(`${xx}+$`).exec(current.value)?.[0]?.length % 2)) {
           current = current.parent;
           state = "colon";
           continue;
