@@ -58,7 +58,10 @@ function removeCircular(obj) {
 
 function parse(input) {
   input = [...String(input)];
-  const root = { type: "root", children: [] };
+  const root = {
+    type: "root",
+    children: []
+  };
   let current = root;
   let state = "find-type";
   let lastChar = "";
@@ -80,34 +83,55 @@ function parse(input) {
     if (state === "find-type") {
       if (startsString(input[i])) {
         state = "build-value";
-        const str = { type: "string", value: "", parent: current };
+        const str = {
+          type: "string",
+          value: "",
+          parent: current
+        };
         current.children.push(str);
         current = str;
         continue;
       } else if (startsNumber(input[i])) {
         state = "build-value";
-        const num = { type: "number", value: "", parent: current };
+        const num = {
+          type: "number",
+          value: "",
+          parent: current
+        };
         current.children.push(num);
         current = num;
         i--;
         continue;
       } else if (startsBoolean(input[i])) {
         state = "build-value";
-        const bool = { type: "boolean", value: "", parent: current };
+        const bool = {
+          type: "boolean",
+          value: "",
+          parent: current
+        };
         current.children.push(bool);
         current = bool;
         i--;
         continue;
       } else if (startsNull(input[i])) {
         state = "build-value";
-        const nil = { type: "null", value: "", parent: current };
+        const nil = {
+          type: "null",
+          value: "",
+          parent: current
+        };
         current.children.push(nil);
         current = nil;
         i--;
         continue;
       } else if (startsArray(input[i])) {
         state = "find-type";
-        const arr = { type: "array", value: [], parent: current, children: [] };
+        const arr = {
+          type: "array",
+          value: [],
+          parent: current,
+          children: []
+        };
         current.children.push(arr);
         current = arr;
         continue;
@@ -239,11 +263,15 @@ function parse(input) {
     if (state === "find-key") {
       if (startsString(input[i])) {
         state = "build-key";
-        const str = { type: "string", key: "", parent: current };
+        const str = {
+          type: "string",
+          key: "",
+          parent: current
+        };
         current.children.push(str);
         current = str;
         continue;
-      }else if (endsObject(input[i]) && current.type === "object") {
+      } else if (endsObject(input[i]) && current.type === "object") {
         if (lastChar == ",") {
           throw new Error("Trailing comma before closing object at " + i);
         }
@@ -252,7 +280,7 @@ function parse(input) {
         current = parent;
         state = "close";
         continue;
-      } else{
+      } else {
         throw new Error("Unquoted object key at " + i);
       }
     }
@@ -301,21 +329,23 @@ function parse(input) {
       state = "close";
       continue;
     }
-    if (input[i] === ","&&["object","array"].includes(current.type)) {
-      if(current.type === "object"){
+    if (input[i] === "," && ["object", "array"].includes(current.type)) {
+      if (current.type === "object") {
         state = "find-key";
-      }else{
+      } else {
         state = "find-type";
       }
       continue;
     }
     throw new Error("Unexpected character " + input[i] + " at " + i);
   }
-  if(current !== root){
+  if (current !== root) {
     throw new Error("Unclosed structure at the end of input");
   }
   return removeCircular(root);
 }
 
-console.log(JSON.stringify(parse(JSON.stringify({ key: "va lue" })), null, 2));
+console.log(JSON.stringify(parse(JSON.stringify({
+  key: "va lue"
+})), null, 2));
 console.log(parse('1e3'));
