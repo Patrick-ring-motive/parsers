@@ -56,265 +56,267 @@ function removeCircular(obj) {
   return obj;
 }
 
-function parse(input) {
-  input = [...String(input)];
-  const root = { type: "root", children: [] };
-  let current = root;
-  let state = "find-type";
-  let lastChar = "";
-  for (let i = 0; i < input.length; i++) {
-    if (!isWhitespace(input[i - 1])) {
-      lastChar = input[i - 1];
+class Parse{
+constructor(input) {
+  this.raw = [...String(input)];
+  this.root = { type: "root", children: [] };
+  this.current = root;
+  this.state = "find-type";
+  this.lastChar = "";
+  for (this.index = 0; this.index < this.raw.length; this.index++) {
+    if (!isWhitespace(this.raw[this.index - 1])) {
+      this.lastChar = this.raw[this.index - 1];
     }
-    if (isWhitespace(input[i]) && !state.startsWith("build")) {
+    if (isWhitespace(this.raw[this.index]) && !this.state.startsWith("build")) {
       continue;
     }
     if (
-      current.parent?.type === "root" &&
-      !["array", "object"].includes(current.type) &&
-      state !== "build-value" &&
-      current.parent?.children?.length !== 0
+      this.current.parent?.type === "root" &&
+      !["array", "object"].includes(this.current.type) &&
+      this.state !== "build-value" &&
+      this.current.parent?.children?.length !== 0
     ) {
-      throw new Error("Unexpected token " + input[i] + " at " + i);
+      throw new Error("Unexpected token " + this.raw[this.index] + " at " + this.index);
     }
-    if (state === "find-type") {
-      if (startsString(input[i])) {
-        state = "build-value";
-        const str = { type: "string", value: "", parent: current };
-        current.children.push(str);
-        current = str;
+    if (this.state === "find-type") {
+      if (startsString(this.raw[this.index])) {
+        this.state = "build-value";
+        const str = { type: "string", value: "", parent: this.current };
+        this.current.children.push(str);
+        this.current = str;
         continue;
-      } else if (startsNumber(input[i])) {
-        state = "build-value";
-        const num = { type: "number", value: "", parent: current };
-        current.children.push(num);
-        current = num;
-        i--;
+      } else if (startsNumber(this.raw[this.index])) {
+        this.state = "build-value";
+        const num = { type: "number", value: "", parent: this.current };
+        this.current.children.push(num);
+        this.current = num;
+        this.index--;
         continue;
-      } else if (startsBoolean(input[i])) {
-        state = "build-value";
-        const bool = { type: "boolean", value: "", parent: current };
-        current.children.push(bool);
-        current = bool;
-        i--;
+      } else if (startsBoolean(this.raw[this.index])) {
+        this.state = "build-value";
+        const bool = { type: "boolean", value: "", parent: this.current };
+        this.current.children.push(bool);
+        this.current = bool;
+        this.index--;
         continue;
-      } else if (startsNull(input[i])) {
-        state = "build-value";
-        const nil = { type: "null", value: "", parent: current };
-        current.children.push(nil);
-        current = nil;
-        i--;
+      } else if (startsNull(this.raw[this.index])) {
+        this.state = "build-value";
+        const nil = { type: "null", value: "", parent: this.current };
+        this.current.children.push(nil);
+        this.current = nil;
+        this.index--;
         continue;
-      } else if (startsArray(input[i])) {
-        state = "find-type";
-        const arr = { type: "array", value: [], parent: current, children: [] };
-        current.children.push(arr);
-        current = arr;
+      } else if (startsArray(this.raw[this.index])) {
+        this.state = "find-type";
+        const arr = { type: "array", value: [], parent: this.current, children: [] };
+        this.current.children.push(arr);
+        this.current = arr;
         continue;
-      } else if (endsArray(input[i]) && current.type === "array") {
-        if (lastChar == ",") {
-          throw new Error("Trailing comma before closing array at " + i);
+      } else if (endsArray(this.raw[this.index]) && this.current.type === "array") {
+        if (this.lastChar == ",") {
+          throw new Error("Trailing comma before closing array at " + this.index);
         }
-        const parent = current.parent;
-        delete current.parent;
-        current = parent;
-        state = "close";
+        const parent = this.current.parent;
+        delete this.current.parent;
+        this.current = parent;
+        this.state = "close";
         continue;
-      } else if (startsObject(input[i])) {
-        state = "find-key";
+      } else if (startsObject(this.raw[this.index])) {
+        this.state = "find-key";
         const obj = {
           type: "object",
           value: {},
-          parent: current,
+          parent: this.current,
           children: [],
         };
-        current.children.push(obj);
-        current = obj;
+        this.current.children.push(obj);
+        this.current = obj;
         continue;
-      } else if (endsObject(input[i]) && current.type === "object") {
-        if (lastChar == ",") {
-          throw new Error("Trailing comma before closing object at " + i);
+      } else if (endsObject(this.raw[this.index]) && this.current.type === "object") {
+        if (this.lastChar == ",") {
+          throw new Error("Trailing comma before closing object at " + this.index);
         }
-        const parent = current.parent;
-        delete current.parent;
-        current = parent;
-        state = "close";
+        const parent = this.current.parent;
+        delete this.current.parent;
+        this.current = parent;
+        this.state = "close";
         continue;
       } else {
-        throw new Error("Unexpected character " + input[i] + " at " + i);
+        throw new Error("Unexpected character " + this.raw[this.index] + " at " + this.index);
       }
     }
 
-    if (state === "build-value") {
-      if (current.type === "string") {
-        if (endsString(input[i]) && !(RegExp(`${xx}+$`).exec(current.value)?.[0]?.length % 2)) {
-          current = current.parent;
-          state = "close";
+    if (this.state === "build-value") {
+      if (this.current.type === "string") {
+        if (endsString(this.raw[this.index]) && !(RegExp(`${xx}+$`).exec(this.current.value)?.[0]?.length % 2)) {
+          this.current = this.current.parent;
+          this.state = "close";
           continue;
         }
-        current.value += input[i];
+        this.current.value += this.raw[this.index];
         continue;
       }
-      if (current.type === "number") {
+      if (this.current.type === "number") {
         if (
-          isWhitespace(input[i]) ||
-          i === input.length - 1 ||
-          isEdgeCase(input[i])
+          isWhitespace(this.raw[this.index]) ||
+          this.index === this.raw.length - 1 ||
+          isEdgeCase(this.raw[this.index])
         ) {
-          if (i === input.length - 1 && !isEdgeCase(input[i])) {
-            current.value += input[i];
+          if (this.index === this.raw.length - 1 && !isEdgeCase(this.raw[this.index])) {
+            this.current.value += this.raw[this.index];
           }
-          const rawValue = current.value;
-          current.value = +current.value;
+          const rawValue = this.current.value;
+          this.current.value = +this.current.value;
           if (
-            Number.isNaN(current.value) ||
+            Number.isNaN(this.current.value) ||
             !endsNumber(rawValue[rawValue.length - 1]) ||
             /Infinity/.test(rawValue)
           ) {
-            throw new Error("Invalid number " + rawValue + " at " + i);
+            throw new Error("Invalid number " + rawValue + " at " + this.index);
           }
-          current = current.parent;
-          state = "close";
-          if (isEdgeCase(input[i])) {
-            i--;
+          this.current = this.current.parent;
+          this.state = "close";
+          if (isEdgeCase(this.raw[this.index])) {
+            this.index--;
           }
           continue;
         }
-        current.value += input[i];
+        this.current.value += this.raw[this.index];
         continue;
       }
-      if (current.type === "boolean") {
-        if (!["true", "false"].some((x) => x.startsWith(current.value))) {
-          throw new Error("Invalid boolean " + current.value + " at " + i);
+      if (this.current.type === "boolean") {
+        if (!["true", "false"].some((x) => x.startsWith(this.current.value))) {
+          throw new Error("Invalid boolean " + this.current.value + " at " + this.index);
         }
         if (
-          isWhitespace(input[i]) ||
-          i === input.length - 1 ||
-          isEdgeCase(input[i])
+          isWhitespace(this.raw[this.index]) ||
+          this.index === this.raw.length - 1 ||
+          isEdgeCase(this.raw[this.index])
         ) {
-          if (i === input.length - 1 && !isEdgeCase(input[i])) {
-            current.value += input[i];
+          if (this.index === this.raw.length - 1 && !isEdgeCase(this.raw[this.index])) {
+            this.current.value += this.raw[this.index];
           }
-          if (!/^(true|false)$/.test(current.value)) {
-            throw new Error("Invalid boolean " + current.value + " at " + i);
+          if (!/^(true|false)$/.test(this.current.value)) {
+            throw new Error("Invalid boolean " + this.current.value + " at " + this.index);
           }
-          current.value = /^true$/.test(current.value);
-          current = current.parent;
-          state = "close";
-          if (isEdgeCase(input[i])) {
-            i--;
+          this.current.value = /^true$/.test(this.current.value);
+          this.current = this.current.parent;
+          this.state = "close";
+          if (isEdgeCase(this.raw[this.index])) {
+            this.index--;
           }
           continue;
         }
-        current.value += input[i];
+        this.current.value += this.raw[this.index];
         continue;
       }
-      if (current.type === "null") {
-        if (!"null".startsWith(current.value)) {
-          throw new Error("Invalid null " + current.value + " at " + i);
+      if (this.current.type === "null") {
+        if (!"null".startsWith(this.current.value)) {
+          throw new Error("Invalid null " + this.current.value + " at " + this.index);
         }
         if (
-          isWhitespace(input[i]) ||
-          i === input.length - 1 ||
-          isEdgeCase(input[i])
+          isWhitespace(this.raw[this.index]) ||
+          this.index === this.raw.length - 1 ||
+          isEdgeCase(this.raw[this.index])
         ) {
-          if (i === input.length - 1 && !isEdgeCase(input[i])) {
-            current.value += input[i];
+          if (this.index === this.raw.length - 1 && !isEdgeCase(this.raw[this.index])) {
+            this.current.value += this.raw[this.index];
           }
-          if (!/^null$/.test(current.value)) {
-            throw new Error("Invalid null " + current.value + " at " + i);
+          if (!/^null$/.test(this.current.value)) {
+            throw new Error("Invalid null " + this.current.value + " at " + this.index);
           }
-          current.value = null;
-          current = current.parent;
-          state = "close";
-          if (isEdgeCase(input[i])) {
-            i--;
+          this.current.value = null;
+          this.current = this.current.parent;
+          this.state = "close";
+          if (isEdgeCase(this.raw[this.index])) {
+            this.index--;
           }
           continue;
         }
-        current.value += input[i];
+        this.current.value += this.raw[this.index];
         continue;
       }
     }
-    if (state === "find-key") {
-      if (startsString(input[i])) {
-        state = "build-key";
-        const str = { type: "string", key: "", parent: current };
-        current.children.push(str);
-        current = str;
+    if (this.state === "find-key") {
+      if (startsString(this.raw[this.index])) {
+        this.state = "build-key";
+        const str = { type: "string", key: "", parent: this.current };
+        this.current.children.push(str);
+        this.current = str;
         continue;
-      }else if (endsObject(input[i]) && current.type === "object") {
-        if (lastChar == ",") {
-          throw new Error("Trailing comma before closing object at " + i);
+      }else if (endsObject(this.raw[this.index]) && this.current.type === "object") {
+        if (this.lastChar == ",") {
+          throw new Error("Trailing comma before closing object at " + this.index);
         }
-        const parent = current.parent;
-        delete current.parent;
-        current = parent;
-        state = "close";
+        const parent = this.current.parent;
+        delete this.current.parent;
+        this.current = parent;
+        this.state = "close";
         continue;
       } else{
-        throw new Error("Unquoted object key at " + i);
+        throw new Error("Unquoted object key at " + this.index);
       }
     }
-    if (state === "build-key") {
-      if (current.type === "string") {
-        if (endsString(input[i]) && !(RegExp(`${xx}+$`).exec(current.key)?.[0]?.length % 2)) {
-          current = current.parent;
-          state = "colon";
+    if (this.state === "build-key") {
+      if (this.current.type === "string") {
+        if (endsString(this.raw[this.index]) && !(RegExp(`${xx}+$`).exec(this.current.key)?.[0]?.length % 2)) {
+          this.current = this.current.parent;
+          this.state = "colon";
           continue;
         }
-        current.key += input[i];
+        this.current.key += this.raw[this.index];
         continue;
       } else {
         throw new Error(
-          "Unexpected state while building key " + current.key + " at " + i,
+          "Unexpected state while building key " + this.current.key + " at " + this.index,
         );
       }
     }
-    if (state === "colon") {
-      if (input[i] === ":") {
-        state = "find-type";
+    if (this.state === "colon") {
+      if (this.raw[this.index] === ":") {
+        this.state = "find-type";
         continue;
       } else {
-        throw new Error("Expected ':' after key at " + i);
+        throw new Error("Expected ':' after key at " + this.index);
       }
     }
-    if (state === "close") {
-      if (endsArray(input[i]) && current.type === "array") {
-        if (lastChar === ",") {
-          throw new Error("Trailing comma before closing array at " + i);
+    if (this.state === "close") {
+      if (endsArray(this.raw[this.index) && this.current.type === "array") {
+        if (this.lastChar === ",") {
+          throw new Error("Trailing comma before closing array at " + this.index);
         }
-        const parent = current.parent;
-        delete current.parent;
-        current = parent;
-        state = "close";
+        const parent = this.current.parent;
+        delete this.current.parent;
+        this.current = parent;
+        this.state = "close";
         continue;
       }
     }
-    if (endsObject(input[i]) && current.type === "object") {
-      if (lastChar === ",") {
-        throw new Error("Trailing comma before closing object at " + i);
+    if (endsObject(this.raw[this.index]) && this.current.type === "object") {
+      if (this.lastChar === ",") {
+        throw new Error("Trailing comma before closing object at " + this.index);
       }
-      const parent = current.parent;
-      delete current.parent;
-      current = parent;
-      state = "close";
+      const parent = this.current.parent;
+      delete this.current.parent;
+      this.current = parent;
+      this.state = "close";
       continue;
     }
-    if (input[i] === ","&&["object","array"].includes(current.type)) {
-      if(current.type === "object"){
-        state = "find-key";
+    if (this.raw[this.index] === ","&&["object","array"].includes(this.current.type)) {
+      if(this.current.type === "object"){
+        this.state = "find-key";
       }else{
-        state = "find-type";
+        this.state = "find-type";
       }
       continue;
     }
-    throw new Error("Unexpected character " + input[i] + " at " + i);
+    throw new Error("Unexpected character " + this.raw[this.index] + " at " + this.index);
   }
-  if(current !== root){
+  if(this.current !== this.root){
     throw new Error("Unclosed structure at the end of input");
   }
   return removeCircular(root);
+}
 }
 
 console.log(JSON.stringify(parse(JSON.stringify({ key: "va lue" })), null, 2));
