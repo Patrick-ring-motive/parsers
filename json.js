@@ -255,7 +255,7 @@ function parse(input) {
     }
     if (state === "build-key") {
       if (current.type === "string") {
-        if (endsString(input[i]) && !(RegExp(`${xx}+$`).exec(current.value)?.[0]?.length % 2)) {
+        if (endsString(input[i]) && !(RegExp(`${xx}+$`).exec(current.key)?.[0]?.length % 2)) {
           current = current.parent;
           state = "colon";
           continue;
@@ -278,7 +278,7 @@ function parse(input) {
     }
     if (state === "close") {
       if (endsArray(input[i]) && current.type === "array") {
-        if (lastChar == ",") {
+        if (lastChar === ",") {
           throw new Error("Trailing comma before closing array at " + i);
         }
         const parent = current.parent;
@@ -289,7 +289,7 @@ function parse(input) {
       }
     }
     if (endsObject(input[i]) && current.type === "object") {
-      if (lastChar == ",") {
+      if (lastChar === ",") {
         throw new Error("Trailing comma before closing object at " + i);
       }
       const parent = current.parent;
@@ -298,8 +298,12 @@ function parse(input) {
       state = "close";
       continue;
     }
-    if (input[i] == ",") {
-      state = "find-type";
+    if (input[i] === ",") {
+      if(current.type === "object"){
+        state = "find-key";
+      }else{
+        state = "find-type";
+      }
       continue;
     }
     throw new Error("Unexpected character " + input[i] + " at " + i);
