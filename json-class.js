@@ -16,19 +16,23 @@ const states = [
   "close",
 ];
 
-const words = {
-  true:true,
-  false:false,
-  null:null
-};
-
+const words = [
+  true,
+  false,
+  null,
+  undefined,
+  NaN
+];
+for(const word of words){
+  words[word] = word;
+}
+const wordList = words.map(String);
 const isWhitespace = (x) => /^\s*$/.test(x);
 
 const startsObject = (x) => x === "{";
 const endsObject = (x) => x === "}";
 
 const backslash = String.fromCharCode(92);
-const isEscape = (x) => x === backslash;
 const xx = backslash + backslash;
 
 const startsArray = (x) => x === "[";
@@ -39,12 +43,6 @@ const endsString = (x) => x === '"';
 
 const startsNumber = (x) => /^[0-9\.-]$/.test(x);
 const endsNumber = (x) => /^[0-9\.]$/.test(x);
-
-const startsBoolean = (x) => x === "t" || x === "f";
-const endsBoolean = (x) => x === "e" || x === "r";
-
-const startsNull = (x) => x === "n";
-const endsNull = (x) => x === "l";
 
 const isEdgeCase = (x) => [",", "}", "]"].includes(x);
 
@@ -100,7 +98,7 @@ constructor(input) {
       } else if (startsNumber(this.raw[this.index])) {
         this.startBuildValue("number");
         continue;
-      } else if (Object.keys(words).some(x=>x.startsWith(this.raw[this.index]))) {
+      } else if (wordList.some(x=>x.startsWith(this.raw[this.index]))) {
         this.startBuildValue("word");
         continue;
       } else if (startsArray(this.raw[this.index])) {
@@ -182,9 +180,9 @@ constructor(input) {
         continue;
       }
       if (this.current.type === "word") {
-        const word = Object.keys(words).find(x=>x.startsWith(this.current.value));
+        const word = wordList.find(x=>x.startsWith(this.current.value));
         if (word === undefined) {
-          throw new Error("Invalid ["+Object.keys(words)+"] " + this.current.value + " at " + this.index);
+          throw new Error("Invalid ["+wordList+"] " + this.current.value + " at " + this.index);
         }
         if (
           isWhitespace(this.raw[this.index]) ||
@@ -195,7 +193,7 @@ constructor(input) {
             this.current.value += this.raw[this.index];
           }
           if (!RegExp(`^${word}$`).test(this.current.value)) {
-            throw new Error("Invalid ["+Object.keys(words)+"] " + this.current.value + " at " + this.index);
+            throw new Error("Invalid ["+wordList+"] " + this.current.value + " at " + this.index);
           }
           this.current.value = words[word];
           this.current = this.current.parent;
