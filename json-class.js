@@ -60,7 +60,7 @@ class Parse{
 constructor(input) {
   this.raw = [...String(input)];
   this.root = { type: "root", children: [] };
-  this.current = root;
+  this.current = this.root;
   this.state = "find-type";
   this.lastChar = "";
   for (this.index = 0; this.index < this.raw.length; this.index++) {
@@ -281,7 +281,7 @@ constructor(input) {
       }
     }
     if (this.state === "close") {
-      if (endsArray(this.raw[this.index) && this.current.type === "array") {
+      if (endsArray(this.raw[this.index]) && this.current.type === "array") {
         if (this.lastChar === ",") {
           throw new Error("Trailing comma before closing array at " + this.index);
         }
@@ -315,9 +315,9 @@ constructor(input) {
   if(this.current !== this.root){
     throw new Error("Unclosed structure at the end of input");
   }
-  removeCircular(root);
+  removeCircular(this.root);
 }
 }
 
 console.log(JSON.stringify(new Parse(JSON.stringify({ key: "va lue" })).root, null, 2));
-console.log(new Parae('1e3'));
+console.log(new Parse('1e3'));
