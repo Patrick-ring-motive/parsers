@@ -16,6 +16,12 @@ const states = [
   "close",
 ];
 
+const words = {
+  true:true,
+  false:false,
+  null:null
+};
+
 const isWhitespace = (x) => /^\s*$/.test(x);
 
 const startsObject = (x) => x === "{";
@@ -94,11 +100,8 @@ constructor(input) {
       } else if (startsNumber(this.raw[this.index])) {
         this.startBuildValue("number");
         continue;
-      } else if (startsBoolean(this.raw[this.index])) {
-        this.startBuildValue("boolean");
-        continue;
-      } else if (startsNull(this.raw[this.index])) {
-        this.startBuildValue("null");
+      } else if (Object.keys(words).some(x=>x.startsWith(this.raw[this.index]))) {
+        this.startBuildValue("word");
         continue;
       } else if (startsArray(this.raw[this.index])) {
         this.state = "find-type";
@@ -178,9 +181,10 @@ constructor(input) {
         this.current.value += this.raw[this.index];
         continue;
       }
-      if (this.current.type === "boolean") {
-        if (!["true", "false"].some((x) => x.startsWith(this.current.value))) {
-          throw new Error("Invalid boolean " + this.current.value + " at " + this.index);
+      if (this.current.type === "word") {
+        const word = Object.keys(words).find(x=>x.startsWith(this.current.value));
+        if (word === undefined) {
+          throw new Error("Invalid ["+Object.keys(words)+"] " + this.current.value + " at " + this.index);
         }
         if (
           isWhitespace(this.raw[this.index]) ||
@@ -190,36 +194,10 @@ constructor(input) {
           if (this.index === this.raw.length - 1 && !isEdgeCase(this.raw[this.index])) {
             this.current.value += this.raw[this.index];
           }
-          if (!/^(true|false)$/.test(this.current.value)) {
-            throw new Error("Invalid boolean " + this.current.value + " at " + this.index);
+          if (!RegExp(`^${word}$`).test(this.current.value)) {
+            throw new Error("Invalid ["+Object.keys(words)+"] " + this.current.value + " at " + this.index);
           }
-          this.current.value = /^true$/.test(this.current.value);
-          this.current = this.current.parent;
-          this.state = "close";
-          if (isEdgeCase(this.raw[this.index])) {
-            this.index--;
-          }
-          continue;
-        }
-        this.current.value += this.raw[this.index];
-        continue;
-      }
-      if (this.current.type === "null") {
-        if (!"null".startsWith(this.current.value)) {
-          throw new Error("Invalid null " + this.current.value + " at " + this.index);
-        }
-        if (
-          isWhitespace(this.raw[this.index]) ||
-          this.index === this.raw.length - 1 ||
-          isEdgeCase(this.raw[this.index])
-        ) {
-          if (this.index === this.raw.length - 1 && !isEdgeCase(this.raw[this.index])) {
-            this.current.value += this.raw[this.index];
-          }
-          if (!/^null$/.test(this.current.value)) {
-            throw new Error("Invalid null " + this.current.value + " at " + this.index);
-          }
-          this.current.value = null;
+          this.current.value = words[word];
           this.current = this.current.parent;
           this.state = "close";
           if (isEdgeCase(this.raw[this.index])) {
