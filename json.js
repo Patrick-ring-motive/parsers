@@ -89,16 +89,22 @@ function parse(input) {
         const num = { type: "number", value: "", parent: current };
         current.children.push(num);
         current = num;
+        i--;
+        continue;
       } else if (startsBoolean(input[i])) {
         state = "build-value";
         const bool = { type: "boolean", value: "", parent: current };
         current.children.push(bool);
         current = bool;
+        i--;
+        continue;
       } else if (startsNull(input[i])) {
         state = "build-value";
         const nil = { type: "null", value: "", parent: current };
         current.children.push(nil);
         current = nil;
+        i--;
+        continue;
       } else if (startsArray(input[i])) {
         state = "find-type";
         const arr = { type: "array", value: [], parent: current, children: [] };
@@ -147,6 +153,7 @@ function parse(input) {
           continue;
         }
         current.value += input[i];
+        continue;
       }
       if (current.type === "number") {
         if (
@@ -174,6 +181,7 @@ function parse(input) {
           continue;
         }
         current.value += input[i];
+        continue;
       }
       if (current.type === "boolean") {
         if (!["true", "false"].some((x) => x.startsWith(current.value))) {
@@ -199,6 +207,7 @@ function parse(input) {
           continue;
         }
         current.value += input[i];
+        continue;
       }
       if (current.type === "null") {
         if (!"null".startsWith(current.value)) {
@@ -224,6 +233,7 @@ function parse(input) {
           continue;
         }
         current.value += input[i];
+        continue;
       }
     }
     if (state === "find-key") {
@@ -233,6 +243,8 @@ function parse(input) {
         current.children.push(str);
         current = str;
         continue;
+      }else{
+        throw new Error("Unquoted object key at " + i);
       }
     }
     if (state === "build-key") {
@@ -284,6 +296,7 @@ function parse(input) {
       state = "find-type";
       continue;
     }
+    throw new Error("Unexpected character " + input[i] + " at " + i);
   }
   if(current !== root){
     throw new Error("Unclosed structure at the end of input");
