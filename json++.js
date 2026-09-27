@@ -62,9 +62,9 @@ function removeCircular(obj) {
 
 function buildResult(node) {
   let value = node?.value;
-  if(node?.type === 'root'){
+  if (node?.type === 'root') {
     const result = node?.children?.map?.(buildResult);
-    if(result?.length > 1){
+    if (result?.length > 1) {
       return result;
     }
     return result?.[0];
@@ -72,7 +72,7 @@ function buildResult(node) {
   if (node?.type === 'object') {
     value ??= {};
     const entries = node?.children ?? []
-    for (let i = 0;i < entries.length; i +=2) {
+    for (let i = 0; i < entries.length; i += 2) {
       value[entries[i].key] = buildResult(entries[i + 1]);
     }
   }
