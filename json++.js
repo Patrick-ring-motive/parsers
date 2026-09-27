@@ -44,8 +44,7 @@ const endsString = (x) => x === '"';
 const startsNumber = (x) => /^[0-9\.-]$/.test(x);
 const endsNumber = (x) => /^[0-9\.]$/.test(x);
 
-const isEdgeCase = (x) => [",", "}", "]"].includes(x); 
-
+const isEdgeCase = (x) => [",", "}", "]"].includes(x);
 
 function removeCircular(obj) {
   if (obj && typeof obj === "object") {
