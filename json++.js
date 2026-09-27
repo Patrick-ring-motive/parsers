@@ -44,7 +44,8 @@ const endsString = (x) => x === '"';
 const startsNumber = (x) => /^[0-9\.-]$/.test(x);
 const endsNumber = (x) => /^[0-9\.]$/.test(x);
 
-const isEdgeCase = (x) => [",", "}", "]"].includes(x);
+const isEdgeCase = (x) => [",", "}", "]"].includes(x); 
+
 
 function removeCircular(obj) {
   if (obj && typeof obj === "object") {
@@ -263,13 +264,16 @@ class Parse {
           this.state = "find-type";
           continue;
         } else {
-          throw new Error("Expected ':' after key at " + this.index);
+          //throw new Error("Expected ':' after key at " + this.index);
+          this.index--;
+          this.state = "find-type";
+          continue
         }
       }
       if (this.state === "close") {
         if (endsArray(this.raw[this.index]) && this.current.type === "array") {
           if (this.lastChar === ",") {
-            throw new Error("Trailing comma before closing array at " + this.index);
+            //throw new Error("Trailing comma before closing array at " + this.index);
           }
           const parent = this.current.parent;
           delete this.current.parent;
@@ -280,7 +284,7 @@ class Parse {
       }
       if (endsObject(this.raw[this.index]) && this.current.type === "object") {
         if (this.lastChar === ",") {
-          throw new Error("Trailing comma before closing object at " + this.index);
+          //throw new Error("Trailing comma before closing object at " + this.index);
         }
         const parent = this.current.parent;
         delete this.current.parent;
@@ -299,7 +303,7 @@ class Parse {
       throw new Error("Unexpected character " + this.raw[this.index] + " at " + this.index);
     }
     if (this.current !== this.root) {
-      throw new Error("Unclosed structure at the end of input");
+      //throw new Error("Unclosed structure at the end of input");
     }
     removeCircular(this.root);
   }
