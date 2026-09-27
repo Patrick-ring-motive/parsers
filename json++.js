@@ -60,6 +60,24 @@ function removeCircular(obj) {
   return obj;
 }
 
+function buildResult(node) {
+  let value = node?.value;
+  if(node?.type === 'root'){
+    return buildResult(node?.children?.[0]);
+  }
+  if (node?.type === 'object') {
+    value ??= {};
+    const entries = node?.children ?? []
+    for (let i = 0;i < entries.length; i +=2) {
+      value[entries[i].key] = buildResult(entries[i + 1]);
+    }
+  }
+  if (node?.type === 'array') {
+    value = node.children.map(buildResult);
+  }
+  return value;
+}
+
 class Parse {
   startBuildValue(type) {
     this.state = "build-value";
@@ -311,4 +329,7 @@ class Parse {
 console.log(JSON.stringify(new Parse(JSON.stringify({
   key: "va lue"
 })).root, null, 2));
+console.log(JSON.stringify(buildResult(new Parse(JSON.stringify({
+  key: "va lue"
+})).root), null, 2));
 console.log(new Parse('1e3'));
