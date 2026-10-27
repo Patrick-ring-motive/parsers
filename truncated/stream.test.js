@@ -2,9 +2,15 @@
 
 const test = require("node:test");
 const assert = require("node:assert/strict");
-const { $stream } = require("./index");
-const { parseTruncatedJSON } = require("./truncate-json");
-const { createJSONRepairer } = require("./json-stream");
+const {
+  $stream
+} = require("./index");
+const {
+  parseTruncatedJSON
+} = require("./truncate-json");
+const {
+  createJSONRepairer
+} = require("./json-stream");
 const encoder = new TextEncoder();
 const backslash = String.fromCharCode(92);
 
@@ -16,7 +22,9 @@ function source(bytes, fail = false) {
       else if (fail) controller.error(new Error("Disconnected"));
       else controller.close();
     },
-  }, { highWaterMark: 0 }));
+  }, {
+    highWaterMark: 0
+  }));
 }
 
 const documents = [
@@ -53,7 +61,9 @@ test("$stream emits before EOF and reads only when demanded", async () => {
       if (pulls === 1) controller.enqueue(encoder.encode('{"message":"hello'));
       else controller.close();
     },
-  }, { highWaterMark: 0 }));
+  }, {
+    highWaterMark: 0
+  }));
   const reader = $stream(res).getReader();
   assert.equal(pulls, 0);
   const first = await reader.read();
@@ -68,12 +78,20 @@ test("$stream emits before EOF and reads only when demanded", async () => {
 
 test("cancellation propagates during a pending read and releases the source", async () => {
   let notifyRead;
-  const reading = new Promise(resolve => { notifyRead = resolve; });
+  const reading = new Promise(resolve => {
+    notifyRead = resolve;
+  });
   let reason;
   const res = new Response(new ReadableStream({
-    pull() { notifyRead(); },
-    cancel(value) { reason = value; },
-  }, { highWaterMark: 0 }));
+    pull() {
+      notifyRead();
+    },
+    cancel(value) {
+      reason = value;
+    },
+  }, {
+    highWaterMark: 0
+  }));
   const reader = $stream(res).getReader();
   const pending = reader.read();
   await reading;
@@ -86,9 +104,15 @@ test("cancellation propagates during a pending read and releases the source", as
 test("malformed syntax errors the output and cancels the source", async () => {
   let cancelled = false;
   const res = new Response(new ReadableStream({
-    pull(controller) { controller.enqueue(encoder.encode('{"a":!')); },
-    cancel() { cancelled = true; },
-  }, { highWaterMark: 0 }));
+    pull(controller) {
+      controller.enqueue(encoder.encode('{"a":!'));
+    },
+    cancel() {
+      cancelled = true;
+    },
+  }, {
+    highWaterMark: 0
+  }));
   await assert.rejects(new Response($stream(res)).text(), SyntaxError);
   assert.equal(cancelled, true);
   assert.equal(res.body.locked, false);
