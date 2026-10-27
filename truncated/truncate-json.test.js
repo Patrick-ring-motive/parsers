@@ -2,7 +2,9 @@
 
 const test = require("node:test");
 const assert = require("node:assert/strict");
-const { parseTruncatedJSON: parse } = require("./truncate-json");
+const {
+  parseTruncatedJSON: parse
+} = require("./truncate-json");
 
 const documents = [
   '{}', '[]', 'null', 'true', 'false', '0', '-0', '-12.34e+56', '1e400',
@@ -38,13 +40,23 @@ test("appended ellipsis is accepted at every truncation position", () => {
 
 test("ellipsis handling preserves content and rejects unrelated malformed syntax", () => {
   const cases = [
-    ['...', undefined], ['{"key...', { key: null }],
-    ['{"a":"hello...', { a: 'hello' }],
+    ['...', undefined],
+    ['{"key...', {
+      key: null
+    }],
+    ['{"a":"hello...', {
+      a: 'hello'
+    }],
     ['"hello ... world...', 'hello ... world'],
-    ['"hello ..."', 'hello ...'], ['"hello ..."...', 'hello ...'],
-    ['{"...":"..."}...', { '...': '...' }],
-    ['1....', 1], ['"hello....', 'hello.'],
-    ['"hello\\...', 'hello\\'], ['"hello\\u12...', 'hello\\u12'],
+    ['"hello ..."', 'hello ...'],
+    ['"hello ..."...', 'hello ...'],
+    ['{"...":"..."}...', {
+      '...': '...'
+    }],
+    ['1....', 1],
+    ['"hello....', 'hello.'],
+    ['"hello\\...', 'hello\\'],
+    ['"hello\\u12...', 'hello\\u12'],
   ];
   for (const [text, expected] of cases) assert.deepEqual(parse(text), expected, text);
   for (const text of ['[1,...,2]', 'trux...', '01...', '"\\x...', '"\\u1z...', '1..']) {
@@ -54,26 +66,89 @@ test("ellipsis handling preserves content and rejects unrelated malformed syntax
 
 test("recovery policy retains every started key and value", () => {
   const cases = [
-    ['', undefined], [' \r\n', undefined], ['{', {}], ['[', []],
-    ['{"a', { a: null }], ['{"a"', { a: null }], ['{"a":', { a: null }],
-    ['{"a":tru', { a: true }], ['[1,fals', [1, false]], ['[null,nul', [null, null]],
-    ['{"a":"hel', { a: 'hel' }], ['"', ''], ['{"', { '': null }],
-    ['"hello\\', 'hello\\'], ['"hello\\u12', 'hello\\u12'],
-    ['"\\u0041\\u', 'A\\u'], ['["a\\n', ['a\n']],
-    ['{"a":[1,{"b":"x', { a: [1, { b: 'x' }] }],
-    ['[1,', [1]], ['{"a":1,', { a: 1 }],
-    ['-', null], ['1.', 1], ['1e', 1], ['1e+', 1],
-    ['[-', [null]], ['[1,2.', [1, 2]], ['{"n":-1.2e-', { n: -1.2 }],
-    ['12', 12], ['{"a":1,"a":tru', { a: true }],
-    ['{"a":1,"a', { a: null }], ['{"a":{"b": \n', { a: { b: null } }],
-    ['{"key\\u12', { 'key\\u12': null }], ['{"key\\', { 'key\\': null }],
-    ['[tru,fal,nul', [true, false, null]], ['[1.,2e+,-', [1, 2, null]],
-    ['[tru,fal,nul]', [true, false, null]], ['[1.,2e+,-]', [1, 2, null]],
-    ['{"a":tru,"b":2e+}', { a: true, b: 2 }],
-    ['tru ', true], ['1. ', 1], ['-0e-', -0],
+    ['', undefined],
+    [' \r\n', undefined],
+    ['{', {}],
+    ['[', []],
+    ['{"a', {
+      a: null
+    }],
+    ['{"a"', {
+      a: null
+    }],
+    ['{"a":', {
+      a: null
+    }],
+    ['{"a":tru', {
+      a: true
+    }],
+    ['[1,fals', [1, false]],
+    ['[null,nul', [null, null]],
+    ['{"a":"hel', {
+      a: 'hel'
+    }],
+    ['"', ''],
+    ['{"', {
+      '': null
+    }],
+    ['"hello\\', 'hello\\'],
+    ['"hello\\u12', 'hello\\u12'],
+    ['"\\u0041\\u', 'A\\u'],
+    ['["a\\n', ['a\n']],
+    ['{"a":[1,{"b":"x', {
+      a: [1, {
+        b: 'x'
+      }]
+    }],
+    ['[1,', [1]],
+    ['{"a":1,', {
+      a: 1
+    }],
+    ['-', null],
+    ['1.', 1],
+    ['1e', 1],
+    ['1e+', 1],
+    ['[-', [null]],
+    ['[1,2.', [1, 2]],
+    ['{"n":-1.2e-', {
+      n: -1.2
+    }],
+    ['12', 12],
+    ['{"a":1,"a":tru', {
+      a: true
+    }],
+    ['{"a":1,"a', {
+      a: null
+    }],
+    ['{"a":{"b": \n', {
+      a: {
+        b: null
+      }
+    }],
+    ['{"key\\u12', {
+      'key\\u12': null
+    }],
+    ['{"key\\', {
+      'key\\': null
+    }],
+    ['[tru,fal,nul', [true, false, null]],
+    ['[1.,2e+,-', [1, 2, null]],
+    ['[tru,fal,nul]', [true, false, null]],
+    ['[1.,2e+,-]', [1, 2, null]],
+    ['{"a":tru,"b":2e+}', {
+      a: true,
+      b: 2
+    }],
+    ['tru ', true],
+    ['1. ', 1],
+    ['-0e-', -0],
   ];
   for (const [text, expected] of cases) assert.deepEqual(parse(text), expected, text);
-  for (const [word, expected] of [['true', true], ['false', false], ['null', null]]) {
+  for (const [word, expected] of [
+      ['true', true],
+      ['false', false],
+      ['null', null]
+    ]) {
     for (let end = 1; end <= word.length; end++) {
       assert.equal(parse(word.slice(0, end)), expected);
     }
@@ -82,12 +157,14 @@ test("recovery policy retains every started key and value", () => {
 
 test("malformed input is not treated as truncation", () => {
   for (const text of [
-    'undefined', 'NaN', 'Infinity', '+1', '01', '--1', '1.e', '1e++', '.',
-    '[1,]', '{"a":1,}', '{a:1}', '[,', '[1 2]', '{}[]', 'truex',
-    'trux', '[trz]', '{"a" 1}', '{"a":}', '[}', '"\\x', '"\\u1z',
-    '"raw\nnewline', '\u00a0{}', '1.e ', 'false true',
-  ]) assert.throws(() => parse(text), SyntaxError, text);
-  for (const value of [null, undefined, 42, {}, [], new String('{}')]) {
+      'undefined', 'NaN', 'Infinity', '+1', '01', '--1', '1.e', '1e++', '.',
+      '[1,]', '{"a":1,}', '{a:1}', '[,', '[1 2]', '{}[]', 'truex',
+      'trux', '[trz]', '{"a" 1}', '{"a":}', '[}', '"\\x', '"\\u1z',
+      '"raw\nnewline', '\u00a0{}', '1.e ', 'false true',
+    ]) assert.throws(() => parse(text), SyntaxError, text);
+  for (const value of [null, undefined, 42, {},
+      [], new String('{}')
+    ]) {
     assert.throws(() => parse(value), TypeError);
   }
 });
@@ -96,7 +173,9 @@ test("special keys remain own data properties without prototype changes", () => 
   const value = parse('{"__proto__":{"polluted":true},"constructor":1');
   assert.equal(Object.getPrototypeOf(value), Object.prototype);
   assert.equal(Object.hasOwn(value, '__proto__'), true);
-  assert.deepEqual(value.__proto__, { polluted: true });
+  assert.deepEqual(value.__proto__, {
+    polluted: true
+  });
   assert.equal(value.constructor, 1);
   assert.equal(Object.prototype.polluted, undefined);
 });
