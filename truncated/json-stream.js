@@ -17,7 +17,11 @@ function createJSONRepairer() {
   }
 
   function scalar(text) {
-    for (const [word, value] of [["true", true], ["false", false], ["null", null]]) {
+    for (const [word, value] of [
+        ["true", true],
+        ["false", false],
+        ["null", null]
+      ]) {
       if (word.startsWith(text)) return JSON.stringify(value);
     }
     if (/^-?(?:0|[1-9][0-9]*)(?:[.][0-9]+)?(?:[eE][+-]?[0-9]+)?$/.test(text)) {
@@ -99,7 +103,11 @@ function createJSONRepairer() {
           if (frame.comma) output.push(",");
           frame.comma = false;
           output.push(char);
-          token = { kind: "string", key: true, escape: "" };
+          token = {
+            kind: "string",
+            key: true,
+            escape: ""
+          };
           continue;
         }
         if (frame.state === "colon") {
@@ -116,12 +124,24 @@ function createJSONRepairer() {
       }
       if (char === "{" || char === "[") {
         output.push(char);
-        frames.push({ object: char === "{", close: char === "{" ? "}" : "]", state: "first", comma: false });
+        frames.push({
+          object: char === "{",
+          close: char === "{" ? "}" : "]",
+          state: "first",
+          comma: false
+        });
       } else if (char === '"') {
         output.push(char);
-        token = { kind: "string", key: false, escape: "" };
+        token = {
+          kind: "string",
+          key: false,
+          escape: ""
+        };
       } else if (/[0-9tfn-]/.test(char)) {
-        token = { kind: "scalar", text: char };
+        token = {
+          kind: "scalar",
+          text: char
+        };
       } else fail();
     }
     return output.join("");
@@ -148,9 +168,14 @@ function createJSONRepairer() {
     return output.join("");
   }
 
-  return { write, finish };
+  return {
+    write,
+    finish
+  };
 }
 
 if (typeof module !== "undefined" && module.exports) {
-  module.exports = { createJSONRepairer };
+  module.exports = {
+    createJSONRepairer
+  };
 }
