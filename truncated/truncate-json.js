@@ -53,7 +53,9 @@ function parseTruncatedJSON(text) {
     index++; // Opening quote.
     const chars = [];
     const escapes = {
-      '"': '"', [backslash]: backslash, "/": "/",
+      '"': '"',
+      [backslash]: backslash,
+      "/": "/",
       b: String.fromCharCode(8),
       f: String.fromCharCode(12),
       n: String.fromCharCode(10),
@@ -62,7 +64,10 @@ function parseTruncatedJSON(text) {
     };
     while (index < text.length) {
       const char = text[index++];
-      if (char === '"') return { value: chars.join(""), complete: true };
+      if (char === '"') return {
+        value: chars.join(""),
+        complete: true
+      };
       if (char.charCodeAt(0) < 0x20) fail();
       if (char !== backslash) {
         chars.push(char);
@@ -78,7 +83,10 @@ function parseTruncatedJSON(text) {
         for (let digit = 0; digit < 4; digit++) {
           if (index === text.length) {
             chars.push(backslash + "u" + hex);
-            return { value: chars.join(""), complete: false };
+            return {
+              value: chars.join(""),
+              complete: false
+            };
           }
           if (!/[0-9a-fA-F]/.test(text[index])) fail();
           hex += text[index++];
@@ -90,7 +98,10 @@ function parseTruncatedJSON(text) {
         fail();
       }
     }
-    return { value: chars.join(""), complete: false };
+    return {
+      value: chars.join(""),
+      complete: false
+    };
   }
 
   function atTokenEnd() {
@@ -100,7 +111,11 @@ function parseTruncatedJSON(text) {
 
   function readScalar() {
     if (text[index] === '"') return readString().value;
-    for (const [word, value] of [["true", true], ["false", false], ["null", null]]) {
+    for (const [word, value] of [
+        ["true", true],
+        ["false", false],
+        ["null", null]
+      ]) {
       if (text[index] !== word[0]) continue;
       for (const char of word) {
         if (atTokenEnd()) return value;
@@ -132,7 +147,10 @@ function parseTruncatedJSON(text) {
     } else {
       // Assignment would invoke the inherited __proto__ setter.
       Object.defineProperty(parent.value, parent.key, {
-        value, enumerable: true, configurable: true, writable: true,
+        value,
+        enumerable: true,
+        configurable: true,
+        writable: true,
       });
       parent.state = "separator";
     }
@@ -187,7 +205,11 @@ function parseTruncatedJSON(text) {
     if (char === "{" || char === "[") {
       const value = char === "{" ? {} : [];
       attach(value);
-      stack.push({ kind: char === "{" ? "object" : "array", value, state: "first" });
+      stack.push({
+        kind: char === "{" ? "object" : "array",
+        value,
+        state: "first"
+      });
       index++;
     } else {
       attach(readScalar());
@@ -196,5 +218,7 @@ function parseTruncatedJSON(text) {
 }
 
 if (typeof module !== "undefined" && module.exports) {
-  module.exports = { parseTruncatedJSON };
+  module.exports = {
+    parseTruncatedJSON
+  };
 }
