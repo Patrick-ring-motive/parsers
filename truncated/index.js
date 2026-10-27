@@ -74,7 +74,10 @@
       reader = res?.body?.getReader?.();
       if (reader) {
         while (true) {
-          const { done, value } = await reader.read();
+          const {
+            done,
+            value
+          } = await reader.read();
           if (done == true || (isNullish(done) && isNullish(value))) {
             break;
           }
@@ -84,7 +87,7 @@
     } catch (e) {
       return encode(String(e));
     } finally {
-      Q(()=>reader?.releaseLock?.()?.catch?.(() => {}));
+      Q(() => reader?.releaseLock?.()?.catch?.(() => {}));
     }
     return new Uint8Array(await new Blob(chunks).arrayBuffer());
   }
@@ -112,9 +115,9 @@
    * In browsers, load truncate-json.js before calling this function.
    */
   async function $json(res) {
-    const parse = typeof module !== "undefined" && module.exports
-      ? require("./truncate-json").parseTruncatedJSON
-      : parseTruncatedJSON;
+    const parse = typeof module !== "undefined" && module.exports ?
+      require("./truncate-json").parseTruncatedJSON :
+      parseTruncatedJSON;
     if (!res?.body) return undefined;
 
     const reader = res.body.getReader();
@@ -130,7 +133,9 @@
           break;
         }
         if (chunk.done) break;
-        chunks.push(streamDecoder.decode(chunk.value, { stream: true }));
+        chunks.push(streamDecoder.decode(chunk.value, {
+          stream: true
+        }));
       }
       chunks.push(streamDecoder.decode());
     } finally {
@@ -148,9 +153,9 @@
    * In browsers, load json-stream.js before calling this function.
    */
   function $stream(res) {
-    const createRepairer = typeof module !== "undefined" && module.exports
-      ? require("./json-stream").createJSONRepairer
-      : createJSONRepairer;
+    const createRepairer = typeof module !== "undefined" && module.exports ?
+      require("./json-stream").createJSONRepairer :
+      createJSONRepairer;
     const repairer = createRepairer();
     const streamDecoder = new TextDecoder();
     const streamEncoder = new TextEncoder();
@@ -183,7 +188,9 @@
             try {
               chunk = await reader.read();
             } catch {
-              chunk = { done: true };
+              chunk = {
+                done: true
+              };
             }
             if (stopped) return;
             if (chunk.done) {
@@ -194,7 +201,9 @@
               controller.close();
               return;
             }
-            const text = repairer.write(streamDecoder.decode(chunk.value, { stream: true }));
+            const text = repairer.write(streamDecoder.decode(chunk.value, {
+              stream: true
+            }));
             if (text) {
               controller.enqueue(streamEncoder.encode(text));
               return;
@@ -221,7 +230,9 @@
           release();
         }
       },
-    }, { highWaterMark: 0 });
+    }, {
+      highWaterMark: 0
+    });
   }
 
   const fetchResponse = async (...args) => {
@@ -236,6 +247,8 @@
   };
 
   if (typeof module !== "undefined" && module.exports) {
-    module.exports = { $json, $stream };
+    module.exports = {
+      $json,
+      $stream
+    };
   }
-
