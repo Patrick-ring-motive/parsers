@@ -2,8 +2,12 @@
 
 const test = require("node:test");
 const assert = require("node:assert/strict");
-const { $json } = require("./index");
-const { parseTruncatedJSON } = require("./truncate-json");
+const {
+  $json
+} = require("./index");
+const {
+  parseTruncatedJSON
+} = require("./truncate-json");
 const encoder = new TextEncoder();
 
 function responseFromChunks(chunks, fail = false) {
@@ -14,8 +18,12 @@ function responseFromChunks(chunks, fail = false) {
       else if (fail) controller.error(new Error("Connection lost"));
       else controller.close();
     },
-  }, { highWaterMark: 0 });
-  body[Symbol.asyncIterator] = () => { throw new Error("Must use a reader"); };
+  }, {
+    highWaterMark: 0
+  });
+  body[Symbol.asyncIterator] = () => {
+    throw new Error("Must use a reader");
+  };
   return new Response(body);
 }
 
