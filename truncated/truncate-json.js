@@ -21,18 +21,39 @@
  * Complete JSON follows JSON.parse semantics, including duplicate keys.
  */
 
-const isString = (value) =>
-  typeof value === 'string' || value instanceof String;
+const instanceOf = (value, constructor) =>{
+  try {
+    return value instanceof constructor;
+  } catch {
+    return false;
+  }
+};
 
-const isArray = (value) =>
-  Array.isArray(value) || value instanceof Array;
+const isString = (value) =>
+  typeof value === 'string' || instanceOf(value, String);
+
+const isArray = (value) =>{
+  try{
+    return Array.isArray(value) || instanceOf(value, Array);
+  }catch{
+    return false;
+  }
+}
 
 const stringify = (value) => {
   try {
     if (isString(value)) return String(value);
     return String(JSON.stringify(value));
   } catch {
-    return String(value);
+    try{
+      return String(value);
+    }catch(e){
+      try {
+        return String(e);
+      } catch {
+        return '';
+      }
+    }
   }
 };
 function parseTruncatedJSON(text) {
