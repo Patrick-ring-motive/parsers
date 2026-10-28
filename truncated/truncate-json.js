@@ -12,25 +12,37 @@
  *   even inside unfinished strings. Literal terminal dots there are ambiguous.
  * - Ellipses inside completed strings are preserved.
  * - A complete number at EOF is retained, even if more digits might have followed.
- * - Invalid syntax throws SyntaxError. Non-string input throws TypeError.
+ * - Malformed syntax is recovered permissively; input uses stringify coercion.
+ * - Missing separators, bare keys, wrong closers and extra roots are accepted.
+ * - Tokens beginning t/f/n become true/false/null; numbers use parseFloat.
+ * - Unknown escapes stay literal; malformed Unicode decodes its hex prefix.
  *
  * Uses an explicit stack rather than recursion for deeply nested documents.
  * Complete JSON follows JSON.parse semantics, including duplicate keys.
  */
-function parseTruncatedJSON(text) {
-  if (typeof text !== "string") {
-    throw new TypeError("Expected a JSON string");
+
+const isString = (value) =>
+  typeof value === 'string' || value instanceof String;
+
+const isArray = (value) =>
+  Array.isArray(value) || value instanceof Array;
+
+const stringify = (value) => {
+  try {
+    if (isString(value)) return String(value);
+    return String(JSON.stringify(value));
+  } catch {
+    return String(value);
   }
+};
+function parseTruncatedJSON(text) {
+  text = stringify(text);
 
   const backslash = String.fromCharCode(92);
   const stack = [];
   let index = 0;
   let result;
   let hasRoot = false;
-
-  function fail() {
-    throw new SyntaxError(`Invalid JSON at position ${index}`);
-  }
 
   function isWhitespace(char) {
     const code = char?.charCodeAt(0);
@@ -53,9 +65,7 @@ function parseTruncatedJSON(text) {
     index++; // Opening quote.
     const chars = [];
     const escapes = {
-      '"': '"',
-      [backslash]: backslash,
-      "/": "/",
+      '"': '"', [backslash]: backslash, "/": "/",
       b: String.fromCharCode(8),
       f: String.fromCharCode(12),
       n: String.fromCharCode(10),
@@ -64,13 +74,9 @@ function parseTruncatedJSON(text) {
     };
     while (index < text.length) {
       const char = text[index++];
-      if (char === '"') return {
-        value: chars.join(""),
-        complete: true
-      };
-      if (char.charCodeAt(0) < 0x20) fail();
+      if (char === '"') return { value: chars.join(""), complete: true };
       if (char !== backslash) {
-        chars.push(char);
+        chars.push(char.charCodeAt(0) < 0x20 ? String.fromCharCode(char.charCodeAt(0)) : char);
         continue;
       }
       if (index === text.length) {
@@ -83,57 +89,38 @@ function parseTruncatedJSON(text) {
         for (let digit = 0; digit < 4; digit++) {
           if (index === text.length) {
             chars.push(backslash + "u" + hex);
-            return {
-              value: chars.join(""),
-              complete: false
-            };
+            return { value: chars.join(""), complete: false };
           }
-          if (!/[0-9a-fA-F]/.test(text[index])) fail();
+          if (!/[0-9a-fA-F]/.test(text[index])) break;
           hex += text[index++];
         }
-        chars.push(String.fromCharCode(parseInt(hex, 16)));
+        chars.push(String.fromCharCode(parseInt(hex.padStart(4, '0'), 16)));
       } else if (Object.hasOwn(escapes, escape)) {
         chars.push(escapes[escape]);
       } else {
-        fail();
+        chars.push(backslash + escape);
       }
     }
-    return {
-      value: chars.join(""),
-      complete: false
-    };
+    return { value: chars.join(""), complete: false };
   }
 
-  function atTokenEnd() {
-    const char = text[index];
-    return index === text.length || isWhitespace(char) || char === "," || char === "]" || char === "}";
+  function readToken() {
+    const start = index;
+    while (index < text.length && !isWhitespace(text[index]) && !'{}[],:"'.includes(text[index])) {
+      index++;
+    }
+    return text.slice(start, index);
   }
 
   function readScalar() {
     if (text[index] === '"') return readString().value;
-    for (const [word, value] of [
-        ["true", true],
-        ["false", false],
-        ["null", null]
-      ]) {
-      if (text[index] !== word[0]) continue;
-      for (const char of word) {
-        if (atTokenEnd()) return value;
-        if (text[index] !== char) fail();
-        index++;
-      }
-      return value;
-    }
-    const start = index;
-    while (index < text.length && /[0-9eE+.-]/.test(text[index])) index++;
-    const token = text.slice(start, index);
-    if (/^-?(?:0|[1-9][0-9]*)(?:[.][0-9]+)?(?:[eE][+-]?[0-9]+)?$/.test(token)) {
-      return Number(token);
-    }
-    if (atTokenEnd() && /^(?:-|-?(?:0|[1-9][0-9]*)[.]|-?(?:0|[1-9][0-9]*)(?:[.][0-9]+)?[eE][+-]?)$/.test(token)) {
-      return token === "-" ? null : Number(token.replace(/(?:[.]|[eE][+-]?)$/, ""));
-    }
-    fail();
+    const token = readToken();
+    if (token[0] === 't') return true;
+    if (token[0] === 'f') return false;
+    if (token[0] === 'n') return null;
+    if (token === '-') return null;
+    const number = parseFloat(token);
+    return Number.isNaN(number) ? token : number;
   }
 
   function attach(value) {
@@ -147,10 +134,7 @@ function parseTruncatedJSON(text) {
     } else {
       // Assignment would invoke the inherited __proto__ setter.
       Object.defineProperty(parent.value, parent.key, {
-        value,
-        enumerable: true,
-        configurable: true,
-        writable: true,
+        value, enumerable: true, configurable: true, writable: true,
       });
       parent.state = "separator";
     }
@@ -158,7 +142,7 @@ function parseTruncatedJSON(text) {
 
   while (true) {
     skipWhitespace();
-    const frame = stack[stack.length - 1];
+    let frame = stack[stack.length - 1];
     if (index === text.length) {
       if (frame?.kind === "object" && (frame.state === "colon" || frame.state === "value")) {
         attach(null);
@@ -166,50 +150,55 @@ function parseTruncatedJSON(text) {
       return result;
     }
     const char = text[index];
-    if (!frame && hasRoot) fail();
+
+    // Either closer ends the current frame. Unmatched closers are ignored.
+    if (char === ']' || char === '}') {
+      if (frame?.kind === 'object' && (frame.state === 'colon' || frame.state === 'value')) {
+        attach(null);
+      }
+      stack.pop();
+      index++;
+      continue;
+    }
+
+    if (!frame && hasRoot && char !== ',' && char !== ':') {
+      if (result === null || typeof result !== 'object') result = [result];
+      frame = { kind: isArray(result) ? 'array' : 'object', value: result, state: 'separator' };
+      stack.push(frame);
+    }
+
+    if (char === ',') {
+      if (frame?.kind === 'object' && (frame.state === 'colon' || frame.state === 'value')) {
+        attach(null);
+      } else if (frame?.kind === 'array' && (frame.state === 'first' || frame.state === 'value')) {
+        attach(null);
+      }
+      if (frame) frame.state = frame.kind === 'array' ? 'value' : 'key';
+      index++;
+      continue;
+    }
+    if (char === ':') {
+      if (frame?.state === 'colon') frame.state = 'value';
+      index++;
+      continue;
+    }
 
     if (frame) {
-      const closing = frame.kind === "array" ? "]" : "}";
-      if (frame.state === "separator") {
-        if (char === closing) {
-          index++;
-          stack.pop();
-        } else if (char === ",") {
-          index++;
-          frame.state = frame.kind === "array" ? "value" : "key";
-        } else {
-          fail();
-        }
+      if (frame.state === 'separator') frame.state = frame.kind === 'array' ? 'value' : 'key';
+      if (frame.kind === 'object' && (frame.state === 'first' || frame.state === 'key')) {
+        // Structural openers in a key slot are literal one-character keys.
+        frame.key = char === '"' ? readString().value
+          : char === '{' || char === '[' ? text[index++] : readToken();
+        frame.state = 'colon';
         continue;
       }
-      if (frame.state === "first" && char === closing) {
-        index++;
-        stack.pop();
-        continue;
-      }
-      if (frame.kind === "object" && (frame.state === "first" || frame.state === "key")) {
-        if (char !== '"') fail();
-        const key = readString();
-        frame.key = key.value;
-        frame.state = "colon";
-        continue;
-      }
-      if (frame.state === "colon") {
-        if (char !== ":") fail();
-        index++;
-        frame.state = "value";
-        continue;
-      }
+      if (frame.state === 'colon') frame.state = 'value';
     }
 
     if (char === "{" || char === "[") {
       const value = char === "{" ? {} : [];
       attach(value);
-      stack.push({
-        kind: char === "{" ? "object" : "array",
-        value,
-        state: "first"
-      });
+      stack.push({ kind: char === "{" ? "object" : "array", value, state: "first" });
       index++;
     } else {
       attach(readScalar());
@@ -217,8 +206,4 @@ function parseTruncatedJSON(text) {
   }
 }
 
-if (typeof module !== "undefined" && module.exports) {
-  module.exports = {
-    parseTruncatedJSON
-  };
-}
+export { parseTruncatedJSON };
