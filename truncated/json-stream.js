@@ -111,7 +111,11 @@ function createJSONRepairer() {
           emit('[');
           emit(pending.join(''));
           pending = [];
-          root = { object: false, count: 1, state: 'separator' };
+          root = {
+            object: false,
+            count: 1,
+            state: 'separator'
+          };
         }
         root.state = 'separator';
         frames.push(root);
@@ -143,7 +147,11 @@ function createJSONRepairer() {
         beginValue();
         if (char === '{' || char === '[') {
           emit(char);
-          const child = { object: char === '{', count: 0, state: 'first' };
+          const child = {
+            object: char === '{',
+            count: 0,
+            state: 'first'
+          };
           if (!frame) root = child;
           frames.push(child);
           continue;
@@ -152,9 +160,17 @@ function createJSONRepairer() {
       }
       if (char === '"') {
         emit('"');
-        token = { kind: 'string', key, escape: '' };
+        token = {
+          kind: 'string',
+          key,
+          escape: ''
+        };
       } else {
-        token = { kind: 'scalar', key, text: char };
+        token = {
+          kind: 'scalar',
+          key,
+          text: char
+        };
       }
     }
     return output.join('');
@@ -175,10 +191,22 @@ function createJSONRepairer() {
     return output.join('');
   }
 
-  return { write, finish };
+  return {
+    write,
+    finish
+  };
 }
 
-const escapes = { '"': '"', '\\': '\\', '/': '/', b: '\b', f: '\f', n: '\n', r: '\r', t: '\t' };
+const escapes = {
+  '"': '"',
+  '\\': '\\',
+  '/': '/',
+  b: '\b',
+  f: '\f',
+  n: '\n',
+  r: '\r',
+  t: '\t'
+};
 
 function whitespace(char) {
   return char === ' ' || char === '\t' || char === '\r' || char === '\n';
@@ -217,7 +245,9 @@ function stringify(value) {
         return '';
       }
     }
-  } 
+  }
 }
 
-export { createJSONRepairer };
+export {
+  createJSONRepairer
+};
