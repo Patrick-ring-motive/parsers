@@ -21,7 +21,7 @@
  * Complete JSON follows JSON.parse semantics, including duplicate keys.
  */
 
-const instanceOf = (value, constructor) =>{
+const instanceOf = (value, constructor) => {
   try {
     return value instanceof constructor;
   } catch {
@@ -32,10 +32,10 @@ const instanceOf = (value, constructor) =>{
 const isString = (value) =>
   typeof value === 'string' || instanceOf(value, String);
 
-const isArray = (value) =>{
-  try{
+const isArray = (value) => {
+  try {
     return Array.isArray(value) || instanceOf(value, Array);
-  }catch{
+  } catch {
     return false;
   }
 }
@@ -45,9 +45,9 @@ const stringify = (value) => {
     if (isString(value)) return String(value);
     return String(JSON.stringify(value));
   } catch {
-    try{
+    try {
       return String(value);
-    }catch(e){
+    } catch (e) {
       try {
         return String(e);
       } catch {
@@ -56,6 +56,7 @@ const stringify = (value) => {
     }
   }
 };
+
 function parseTruncatedJSON(text) {
   text = stringify(text);
 
@@ -86,7 +87,9 @@ function parseTruncatedJSON(text) {
     index++; // Opening quote.
     const chars = [];
     const escapes = {
-      '"': '"', [backslash]: backslash, "/": "/",
+      '"': '"',
+      [backslash]: backslash,
+      "/": "/",
       b: String.fromCharCode(8),
       f: String.fromCharCode(12),
       n: String.fromCharCode(10),
@@ -95,7 +98,10 @@ function parseTruncatedJSON(text) {
     };
     while (index < text.length) {
       const char = text[index++];
-      if (char === '"') return { value: chars.join(""), complete: true };
+      if (char === '"') return {
+        value: chars.join(""),
+        complete: true
+      };
       if (char !== backslash) {
         chars.push(char.charCodeAt(0) < 0x20 ? String.fromCharCode(char.charCodeAt(0)) : char);
         continue;
@@ -110,7 +116,10 @@ function parseTruncatedJSON(text) {
         for (let digit = 0; digit < 4; digit++) {
           if (index === text.length) {
             chars.push(backslash + "u" + hex);
-            return { value: chars.join(""), complete: false };
+            return {
+              value: chars.join(""),
+              complete: false
+            };
           }
           if (!/[0-9a-fA-F]/.test(text[index])) break;
           hex += text[index++];
@@ -122,7 +131,10 @@ function parseTruncatedJSON(text) {
         chars.push(backslash + escape);
       }
     }
-    return { value: chars.join(""), complete: false };
+    return {
+      value: chars.join(""),
+      complete: false
+    };
   }
 
   function readToken() {
@@ -155,7 +167,10 @@ function parseTruncatedJSON(text) {
     } else {
       // Assignment would invoke the inherited __proto__ setter.
       Object.defineProperty(parent.value, parent.key, {
-        value, enumerable: true, configurable: true, writable: true,
+        value,
+        enumerable: true,
+        configurable: true,
+        writable: true,
       });
       parent.state = "separator";
     }
@@ -184,7 +199,11 @@ function parseTruncatedJSON(text) {
 
     if (!frame && hasRoot && char !== ',' && char !== ':') {
       if (result === null || typeof result !== 'object') result = [result];
-      frame = { kind: isArray(result) ? 'array' : 'object', value: result, state: 'separator' };
+      frame = {
+        kind: isArray(result) ? 'array' : 'object',
+        value: result,
+        state: 'separator'
+      };
       stack.push(frame);
     }
 
@@ -208,8 +227,8 @@ function parseTruncatedJSON(text) {
       if (frame.state === 'separator') frame.state = frame.kind === 'array' ? 'value' : 'key';
       if (frame.kind === 'object' && (frame.state === 'first' || frame.state === 'key')) {
         // Structural openers in a key slot are literal one-character keys.
-        frame.key = char === '"' ? readString().value
-          : char === '{' || char === '[' ? text[index++] : readToken();
+        frame.key = char === '"' ? readString().value :
+          char === '{' || char === '[' ? text[index++] : readToken();
         frame.state = 'colon';
         continue;
       }
@@ -219,7 +238,11 @@ function parseTruncatedJSON(text) {
     if (char === "{" || char === "[") {
       const value = char === "{" ? {} : [];
       attach(value);
-      stack.push({ kind: char === "{" ? "object" : "array", value, state: "first" });
+      stack.push({
+        kind: char === "{" ? "object" : "array",
+        value,
+        state: "first"
+      });
       index++;
     } else {
       attach(readScalar());
@@ -227,4 +250,6 @@ function parseTruncatedJSON(text) {
   }
 }
 
-export { parseTruncatedJSON };
+export {
+  parseTruncatedJSON
+};
